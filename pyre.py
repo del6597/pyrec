@@ -4,20 +4,6 @@ import ssl
 from threading import Thread
 from time import sleep
 
-def ReadIO(sock):
-    rec = sock.recv(1024)
-    buff = ''
-    while(rec.decode() != ''):        
-        buff = buff + rec.decode()
-        if '\n' in buff:
-            coms = str.split(buff, '\n')
-            for i in range(len(coms)):
-                print(coms[i])
-                if str.find(coms[i], "PING") == 0:
-                    sock.sendall((coms[i].replace("PING","PONG") + '\n').encode())
-            buff = coms[-1]
-        rec = sock.recv(1024)
-
 class Pyre:
     def __init__(self, opts):
         self.server = opts['server']
@@ -32,7 +18,21 @@ class Pyre:
         self.finger = opts['finger']
         self.userinfo = opts['userinfo']    
 
-    def write(self, text, endl = True):
+    def read(self):
+        rec = self.sock.recv(512)
+        buff =''
+        while(rec.decode() != ''):        
+            buff = buff + rec.decode()
+            if '\n' in buff:
+                coms = str.split(buff, '\n')
+                for i in range(len(coms)):
+                    print(coms[i])
+                    if str.find(coms[i], "PING") == 0:
+                        self.write(coms[i].replace("PING","PONG"))
+                buff = coms[-1]
+            rec = self.sock.recv(512)
+
+    def write(self, text, endl=True):
         if(endl):
             self.sock.sendall((text + "\n").encode())
         else:
@@ -43,7 +43,7 @@ class Pyre:
         if(self.ssl):
             self.sock = ssl.wrap_socket(self.sock)        
         self.sock.connect((self.server, self.port))
-        thread = Thread(target = ReadIO, args = (self.sock, ))
+        thread = Thread(target=self.read)
         thread.start()
         if(self.password!="None"):
             self.write("PASS " + self.password)
