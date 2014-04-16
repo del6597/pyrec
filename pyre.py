@@ -1,4 +1,22 @@
 from configparser import SafeConfigParser
+import socket
+import ssl
+from threading import Thread
+from time import sleep
+
+def ReadIO(sock):
+    rec = sock.recv(1024)
+    buff = ''
+    while(rec.decode() != ''):        
+        buff = buff + rec.decode()
+        if '\n' in buff:
+            coms = str.split(buff, '\n')
+            for i in range(len(coms)):
+                print(coms[i])
+                if str.find(coms[i], "PING") == 0:
+                    sock.sendall((coms[i].replace("PING","PONG") + '\n').encode())
+            buff = coms[-1]
+        rec = sock.recv(1024)
 
 class Pyre:
     def __init__(self, opts):
@@ -12,26 +30,25 @@ class Pyre:
         self.usermode = opts['usermode']
         self.version = opts['version']
         self.finger = opts['finger']
-        self.userinfo = opts['userinfo']
+        self.userinfo = opts['userinfo']    
+
+    def write(self, text, endl = True):
+        if(endl):
+            self.sock.sendall((text + "\n").encode())
+        else:
+            self.sock.sendall(text.encode())
 
     def connect(self):
-        pass
-
-    def connect(self, server):
-        self.server = server
-        self.connect()
-
-    def connect(self, server, port):        
-        self.port = port
-        self.connect(server)
-
-    def connect(self, server, port, ssl):        
-        self.ssl = ssl
-        self.connect(server, port)
-
-    def conect(self, server, port, ssl, password):
-        self.password = password
-        self.connect(server, port, ssl)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if(self.ssl):
+            self.sock = ssl.wrap_socket(self.sock)        
+        self.sock.connect((self.server, self.port))
+        thread = Thread(target = ReadIO, args = (self.sock, ))
+        thread.start()
+        if(self.password!="None"):
+            self.write("PASS " + self.password)
+        self.write("NICK " + self.nick)
+        self.write("USER " + self.ident + " * * :" + self.realname)
     
 def main():
     parser = SafeConfigParser()
@@ -39,9 +56,9 @@ def main():
 
     options = {}
     options['server'] = parser.get('network','server')
-    options['port'] = parger.get('network','port')
-    options['ssl'] = (port[0] == '+')
-    options['port'] = int(port)
+    options['port'] = parser.get('network','port')
+    options['ssl'] = (options['port'][0] == '+')
+    options['port'] = int(options['port'])
     options['password'] = parser.get('network', 'password')
 
     options['nick'] = parser.get('bot', 'nick')
@@ -53,5 +70,6 @@ def main():
     options['finger'] = parser.get('ctcp', 'finger')
     options['userinfo'] = parser.get('ctcp', 'userinfo')    
     
-    bot = new Pyre(options)
+    bot = Pyre(options)
+    bot.connect()
 main()
