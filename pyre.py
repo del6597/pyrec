@@ -45,13 +45,16 @@ class Pyre:
         self.sock.connect((self.server, self.port))
         thread = Thread(target=self.read)
         thread.start()
-        if(self.password!="None"):
+        if(self.password!=None):
             self.write("PASS " + self.password)
         self.write("NICK " + self.nick)
         self.write("USER " + self.ident + " * * :" + self.realname)
     
 def main():
-    parser = SafeConfigParser()
+    defaults = {'network': {'server': None, 'port': 6667, 'password': None}, \
+                'bot': {'nick': 'Pyre', 'ident': 'pyro', 'realname': 'Pyre', 'usermode': '+iwx'}, \
+                'ctcp': {'version': 'Pyre IRC', 'finger': 'Pyre IRC', 'userinfo': 'Pyre IRC'}}
+    parser = SafeConfigParser(defaults)
     parser.read('config.ini')
 
     options = {}
