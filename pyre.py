@@ -41,14 +41,15 @@ class Pyre:
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if(self.ssl):
-            self.sock = ssl.wrap_socket(self.sock)        
+            self.sock = ssl.wrap_socket(self.sock)
+        self.sock.settimeout(600)
         self.sock.connect((self.server, self.port))
         thread = Thread(target=self.read)
         thread.start()
         if(self.password!=None):
             self.write("PASS " + self.password)
         self.write("NICK " + self.nick)
-        self.write("USER " + self.ident + " * * :" + self.realname)
+        self.write("USER " + self.ident + " 8 * :" + self.realname)
     
 def main():
     defaults = {'network': {'server': None, 'port': 6667, 'password': None}, \
