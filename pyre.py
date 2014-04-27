@@ -25,7 +25,7 @@ class Pyre:
             buff = buff + rec.decode()
             if '\n' in buff:
                 coms = str.split(buff, '\n')
-                for i in range(len(coms)):
+                for i in range(len(coms)-1):
                     print(coms[i])
                     if str.find(coms[i], "PING") == 0:
                         self.write(coms[i].replace("PING","PONG"))
@@ -37,6 +37,7 @@ class Pyre:
             self.sock.sendall((text + "\n").encode())
         else:
             self.sock.sendall(text.encode())
+        print(text)
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
