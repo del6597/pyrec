@@ -27,7 +27,7 @@ class Pyre:
             if '\n' in buff:
                 coms = str.split(buff, '\n')
                 for i in range(len(coms)-1):
-                    print("["+str(datetime.datetime.now().time())+"]"+coms[i])
+                    print("["+str(datetime.datetime.now().time())+"] "+coms[i])
                     if str.find(coms[i], "PING") == 0:
                         self.write(coms[i].replace("PING","PONG"))
                 buff = coms[-1]
@@ -38,7 +38,7 @@ class Pyre:
             self.sock.sendall((text + "\n").encode())
         else:
             self.sock.sendall(text.encode())
-        print("["+str(datetime.datetime.now().time())+"]"+text)
+        print("["+str(datetime.datetime.now().time())+"] "+text)
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
