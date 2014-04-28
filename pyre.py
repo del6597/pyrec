@@ -31,7 +31,9 @@ class Pyre:
                     if coms[i].startswith("PING"):
                       self.sock.sendall(("PONG" + coms[i][4:] + "\n").encode())
                     else:
-                      pass
+                      split = str.split(coms[i])
+                      if split[1] == "001":
+                        self.write("NS identify firelord")
                 buff = coms[-1]
             rec = self.sock.recv(512)
 
