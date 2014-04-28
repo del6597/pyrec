@@ -17,7 +17,7 @@ class Pyre:
         self.usermode = opts['usermode']
         self.version = opts['version']
         self.finger = opts['finger']
-        self.userinfo = opts['userinfo']    
+        self.userinfo = opts['userinfo']
 
     def read(self):
         rec = self.sock.recv(512)
@@ -33,7 +33,7 @@ class Pyre:
                     else:
                       pass
                 buff = coms[-1]
-            rec = self.sock.recv(512)        
+            rec = self.sock.recv(512)
 
     def write(self, text):
         if(not text.endswith("\n")):
@@ -62,7 +62,7 @@ class Pyre:
           text = input()
         self.write(text)
         #self.sock.close()
-    
+
 def main():
     defaults = {'network': {'server': None, 'port': 6667, 'password': None}, \
                 'bot': {'nick': 'Pyre', 'ident': 'pyro', 'realname': 'Pyre', 'usermode': '+iwx'}, \
@@ -84,8 +84,8 @@ def main():
 
     options['version'] = parser.get('ctcp', 'version')
     options['finger'] = parser.get('ctcp', 'finger')
-    options['userinfo'] = parser.get('ctcp', 'userinfo')    
-    
+    options['userinfo'] = parser.get('ctcp', 'userinfo')
+
     bot = Pyre(options)
     bot.connect()
 main()
