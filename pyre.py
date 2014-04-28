@@ -2,6 +2,7 @@ from configparser import SafeConfigParser
 import datetime
 import socket
 import ssl
+import queue
 from threading import Thread
 from time import sleep
 
@@ -18,6 +19,7 @@ class Pyre:
         self.version = opts['version']
         self.finger = opts['finger']
         self.userinfo = opts['userinfo']
+        self.sendq = queue.PriorityQueue()
 
     def read(self):
         rec = self.sock.recv(512)
@@ -28,34 +30,45 @@ class Pyre:
                 coms = str.split(buff, '\n')
                 for i in range(len(coms)-1):
                     print("["+str(datetime.datetime.now().time())+"] "+coms[i])
-                    if coms[i].startswith("PING"):
+                    if coms[i].startswith("PING"): #Skip the queue for PINGS
                       self.sock.sendall(("PONG" + coms[i][4:] + "\n").encode())
                     else:
                       split = str.split(coms[i])
-                      if split[1] == "001":
-                        self.write("NS identify firelord")
+                      #need something here to say 'run through all these plugins and broadcast them events
                 buff = coms[-1]
             rec = self.sock.recv(512)
+        self.connected = False
 
     def write(self, text):
         if(not text.endswith("\n")):
-            self.sock.sendall((text + "\n").encode())
+            #self.sock.sendall((text + "\n").encode())
+            self.sendq.put((text + "\n"))
         else:
-            self.sock.sendall(text.encode())
-        print("["+str(datetime.datetime.now().time())+"] "+text)
+            #self.sock.sendall(text.encode())
+            self.sendq.put(text)
 
+    def send(self):
+        while(self.connected):
+          text = self.sendq.get()
+          self.sock.sendall(text.encode())
+          print("["+str(datetime.datetime.now().time())+"] "+ text)
+          sleep(2)
+        
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if(self.ssl):
             self.sock = ssl.wrap_socket(self.sock)
         self.sock.settimeout(300)
         self.sock.connect((self.server, self.port))
-        thread = Thread(target=self.read)
-        thread.start()
+        readthread = Thread(target=self.read)
+        readthread.start()
         if(self.password!=None):
             self.write("PASS " + self.password)
         self.write("NICK " + self.nick)
         self.write("USER " + self.ident + " 8 * :" + self.realname)
+        self.connected = True
+        writethread = Thread(target=self.send)
+        writethread.start()
         # sleep(5) # Not a good solution
         # self.write("NS identify password") # ID to nickserv
         text = input()
