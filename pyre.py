@@ -28,8 +28,10 @@ class Pyre:
                 coms = str.split(buff, '\n')
                 for i in range(len(coms)-1):
                     print("["+str(datetime.datetime.now().time())+"] "+coms[i])
-                    if str.find(coms[i], "PING") == 0:
-                        self.write(coms[i].replace("PING","PONG"))
+                    if coms[i].startswith("PING"):
+                      self.sock.sendall(("PONG" + coms[i][4:] + "\n").encode())
+                    else:
+                      pass
                 buff = coms[-1]
             rec = self.sock.recv(512)        
 
