@@ -1,4 +1,5 @@
 from configparser import SafeConfigParser
+import datetime
 import socket
 import ssl
 from threading import Thread
@@ -21,29 +22,29 @@ class Pyre:
     def read(self):
         rec = self.sock.recv(512)
         buff =''
-        while(rec.decode() != ''):        
+        while(rec.decode() != ''):
             buff = buff + rec.decode()
             if '\n' in buff:
                 coms = str.split(buff, '\n')
                 for i in range(len(coms)-1):
-                    print(coms[i])
+                    print("["+str(datetime.datetime.now().time())+"]"+coms[i])
                     if str.find(coms[i], "PING") == 0:
                         self.write(coms[i].replace("PING","PONG"))
                 buff = coms[-1]
-            rec = self.sock.recv(512)
+            rec = self.sock.recv(512)        
 
-    def write(self, text, endl=True):
-        if(endl):
+    def write(self, text):
+        if(not text.endswith("\n")):
             self.sock.sendall((text + "\n").encode())
         else:
             self.sock.sendall(text.encode())
-        print(text)
+        print("["+str(datetime.datetime.now().time())+"]"+text)
 
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if(self.ssl):
             self.sock = ssl.wrap_socket(self.sock)
-        self.sock.settimeout(600)
+        self.sock.settimeout(300)
         self.sock.connect((self.server, self.port))
         thread = Thread(target=self.read)
         thread.start()
@@ -51,6 +52,14 @@ class Pyre:
             self.write("PASS " + self.password)
         self.write("NICK " + self.nick)
         self.write("USER " + self.ident + " 8 * :" + self.realname)
+        # sleep(5) # Not a good solution
+        # self.write("NS identify password") # ID to nickserv
+        text = input()
+        while(not text.startswith("QUIT")):
+          self.write(text)
+          text = input()
+        self.write(text)
+        #self.sock.close()
     
 def main():
     defaults = {'network': {'server': None, 'port': 6667, 'password': None}, \
