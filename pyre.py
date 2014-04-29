@@ -52,7 +52,7 @@ class Pyre:
           text = self.sendq.get()
           self.sock.sendall(text.encode())
           print("["+str(datetime.datetime.now().time())+"] "+ text)
-          sleep(2)
+          sleep(1.5) # Adjust as needed
         
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
