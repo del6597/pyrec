@@ -39,7 +39,7 @@ class Pyre:
             rec = self.sock.recv(512)
         self.connected = False
 
-    def write(self, text):
+    def write(self, text, immed=False):
         if(not text.endswith("\n")):
             #self.sock.sendall((text + "\n").encode())
             self.sendq.put((text + "\n"))
@@ -60,17 +60,23 @@ class Pyre:
             self.sock = ssl.wrap_socket(self.sock)
         self.sock.settimeout(300)
         self.sock.connect((self.server, self.port))
+        
         readthread = Thread(target=self.read)
         readthread.start()
+        
+        register = ""
         if(self.password!=None):
-            self.write("PASS " + self.password)
-        self.write("NICK " + self.nick)
-        self.write("USER " + self.ident + " 8 * :" + self.realname)
+            register = "PASS " + self.password +'\n'
+        register += "NICK " + self.nick +'\n'
+        register += "USER " + self.ident + " 8 * :" + self.realname + '\n'
+        self.sock.sendall(register.encode())
         self.connected = True
+        
+        # Start our sendq thread
         writethread = Thread(target=self.send)
         writethread.start()
-        # sleep(5) # Not a good solution
-        # self.write("NS identify password") # ID to nickserv
+        
+        # Dumb CLI
         text = input()
         while(not text.startswith("QUIT")):
             self.write(text)
