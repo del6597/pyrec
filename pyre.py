@@ -31,10 +31,10 @@ class Pyre:
                 for i in range(len(coms)-1):
                     print("["+str(datetime.datetime.now().time())+"] "+coms[i])
                     if coms[i].startswith("PING"): #Skip the queue for PINGS
-                      self.sock.sendall(("PONG" + coms[i][4:] + "\n").encode())
+                        self.sock.sendall(("PONG" + coms[i][4:] + "\n").encode())
                     else:
-                      split = str.split(coms[i])
-                      #need something here to say 'run through all these plugins and broadcast them events
+                        split = str.split(coms[i])
+                        #need something here to say 'run through all these plugins and broadcast them events
                 buff = coms[-1]
             rec = self.sock.recv(512)
         self.connected = False
@@ -49,10 +49,10 @@ class Pyre:
 
     def send(self):
         while(self.connected):
-          text = self.sendq.get()
-          self.sock.sendall(text.encode())
-          print("["+str(datetime.datetime.now().time())+"] "+ text)
-          sleep(1.5) # Adjust as needed
+            text = self.sendq.get()
+            self.sock.sendall(text.encode())
+            print("["+str(datetime.datetime.now().time())+"] "+ text)
+            sleep(1.5) # Adjust as needed
         
     def connect(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,8 +73,8 @@ class Pyre:
         # self.write("NS identify password") # ID to nickserv
         text = input()
         while(not text.startswith("QUIT")):
-          self.write(text)
-          text = input()
+            self.write(text)
+            text = input()
         self.write(text)
         #self.sock.close()
 
