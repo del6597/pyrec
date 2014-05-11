@@ -19,7 +19,7 @@ class Pyre:
         self.version = opts['version']
         self.finger = opts['finger']
         self.userinfo = opts['userinfo']
-        self.sendq = queue.PriorityQueue()
+        self.sendq = queue.Queue()# PriorityQueue() -- Maybe later
         self.error = False
         self.binds = {}
         self.bind("001", self.welcome)
@@ -85,29 +85,31 @@ class Pyre:
         register += "USER " + self.ident + " 8 * :" + self.realname + '\n'
         self.sock.sendall(register.encode())        
 
-    def cmd(self, cmd, params, rest):
+    def cmd(self, cmd, params, rest=""):
         cmd = str.upper(str(cmd)) + " "
         p = ""
         for i in params:
-            p += str(i) + " "
-        rest = ":" + str(rest)
+            p += str(i) + " "        
         self.write(cmd + p + rest)
         
     def notice(self, target, msg):
-        self.cmd("NOTICE", [target], msg)
+        self.cmd("NOTICE", [target], ":" + msg)
         
     def msg(self, target, msg):
-        self.cmd("PRIVMSG", [target], msg)
+        self.cmd("PRIVMSG", [target], ":" + msg)
     
     def invite(self, target, channel):
         self.cmd("INVITE", [target, channel])
+        
+    def join(self, target, key=None):
+        self.cmd("JOIN", [target, key])
         
     def welcome(self, bot, line):
         self.connected = True
         # Start our sendq thread
         writethread = Thread(target=self.send)
         writethread.start()
-
+        
 def main():
     defaults = {'network': {'server': None, 'port': 6667, 'password': None}, \
                 'bot': {'nick': 'Pyre', 'ident': 'pyro', 'realname': 'Pyre', 'usermode': '+iwx'}, \
