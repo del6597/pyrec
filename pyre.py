@@ -20,11 +20,14 @@ class Pyre:
         self.finger = opts['finger']
         self.userinfo = opts['userinfo']
         self.sendq = queue.PriorityQueue()
+        self.error = False
+        self.binds = {}
+        self.bind("001", self.welcome)
 
     def read(self):
         rec = self.sock.recv(512)
         buff =''
-        while(rec.decode() != ''):
+        while(rec.decode() != '' and not self.error):
             buff = buff + rec.decode()
             if '\n' in buff:
                 coms = str.split(buff, '\n')
@@ -32,13 +35,23 @@ class Pyre:
                     print("["+str(datetime.datetime.now().time())+"] "+coms[i])
                     if coms[i].startswith("PING"): #Skip the queue for PINGS
                         self.sock.sendall(("PONG" + coms[i][4:] + "\n").encode())
+                    elif coms[i].startswith("ERROR"):
+                        self.error = True
                     else:
                         split = str.split(coms[i])
                         #need something here to say 'run through all these plugins and broadcast them events
+                        binds = self.binds.setdefault(split[1], [])
+                        for b in binds:
+                            b(self, coms[i])
                 buff = coms[-1]
             rec = self.sock.recv(512)
         self.connected = False
 
+    def bind(self, bind, handler):
+        b = self.binds.setdefault(bind, [])
+        b.append(handler)
+        self.binds[bind] = b
+        
     def write(self, text, immed=False):
         if(not text.endswith("\n")):
             #self.sock.sendall((text + "\n").encode())
@@ -48,7 +61,7 @@ class Pyre:
             self.sendq.put(text)
 
     def send(self):
-        while(self.connected):
+        while(self.connected and not self.error):
             text = self.sendq.get()
             self.sock.sendall(text.encode())
             print("["+str(datetime.datetime.now().time())+"] "+ text)
@@ -61,6 +74,7 @@ class Pyre:
         self.sock.settimeout(300)
         self.sock.connect((self.server, self.port))
         
+        # Starts our read io thread
         readthread = Thread(target=self.read)
         readthread.start()
         
@@ -69,20 +83,13 @@ class Pyre:
             register = "PASS " + self.password +'\n'
         register += "NICK " + self.nick +'\n'
         register += "USER " + self.ident + " 8 * :" + self.realname + '\n'
-        self.sock.sendall(register.encode())
+        self.sock.sendall(register.encode())        
+
+    def welcome(self, bot, line):
         self.connected = True
-        
         # Start our sendq thread
         writethread = Thread(target=self.send)
         writethread.start()
-        
-        # Dumb CLI
-        text = input()
-        while(not text.startswith("QUIT")):
-            self.write(text)
-            text = input()
-        self.write(text)
-        #self.sock.close()
 
 def main():
     defaults = {'network': {'server': None, 'port': 6667, 'password': None}, \
@@ -107,6 +114,14 @@ def main():
     options['finger'] = parser.get('ctcp', 'finger')
     options['userinfo'] = parser.get('ctcp', 'userinfo')
 
-    bot = Pyre(options)
+    bot = Pyre(options)    
     bot.connect()
+    
+    # Dumb CLI
+    text = input()
+    while(not text.startswith("QUIT") and not bot.error and bot.connected):
+        bot.write(text)
+        text = input()
+    bot.write(text)
+    
 main()
