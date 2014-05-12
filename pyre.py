@@ -25,6 +25,19 @@ class Pyre:
         self.binds = {}
         self.bind("001", self.welcome)
 
+    def identd(self, addr, port, user):
+        try:
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.bind((addr, port))
+            server.settimeout(600)
+            server.listen(1)
+            con, other = server.accept()
+            query = con.recv(64)
+            query = query.decode()
+            con.sendall((query + " : USERID : IRC : " + user).encode())
+        except:
+            print("Ident server failed")
+        
     def read(self):
         rec = self.sock.recv(512)
         buff =''
@@ -69,6 +82,10 @@ class Pyre:
             sleep(1.5) # Adjust as needed
         
     def connect(self):
+        # Start an ident server
+        identserv = Thread(target=self.identd, name="Identd", args=("",113,self.ident))
+        identserv.start()
+        
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if(self.ssl):
             self.sock = ssl.wrap_socket(self.sock)
@@ -76,7 +93,7 @@ class Pyre:
         self.sock.connect((self.server, self.port))
         
         # Starts our read io thread
-        readthread = Thread(target=self.read)
+        readthread = Thread(target=self.read, name="ReadThread")
         readthread.start()
         
         register = ""
@@ -108,7 +125,7 @@ class Pyre:
     def welcome(self, bot, line):
         self.connected = True
         # Start our sendq thread
-        writethread = Thread(target=self.send)
+        writethread = Thread(target=self.send, name="WriteThread")
         writethread.start()
         
 def main():
